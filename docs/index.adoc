@@ -10,7 +10,7 @@ View page below
 
 ifdef::env-name[:relfilesuffix: .adoc]
 
-* xref:adventure.html[Adventure, window="_blank"]
+* xref:Anhelina-adventure.html[Adventure, window="_blank"]
 
 ====
 

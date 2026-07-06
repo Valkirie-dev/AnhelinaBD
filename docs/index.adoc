@@ -10,8 +10,7 @@ View CVs below
 
 ifdef::env-name[:relfilesuffix: .adoc]
 
-* xref:englsih-cv.html[English CV, window="_blank"]
-* xref:ukranian-cv.html[Ukranian CV, window="_blank"]
+* xref:adventure.html[Adventure, window="_blank"]
 
 ====
 

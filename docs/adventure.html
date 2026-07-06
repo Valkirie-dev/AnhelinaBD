@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Архив Потерянных Историй</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        archive: {
+                            dark: '#08111F',
+                            light: '#101B2D',
+                            gold: '#D4AF37',
+                            emerald: '#047857',
+                            silver: '#C0C0C0'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'serif'],
+                        sans: ['Montserrat', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'glow': '0 0 20px rgba(212, 175, 55, 0.5)',
+                        'glow-emerald': '0 0 20px rgba(4, 120, 87, 0.5)',
+                        'glow-silver': '0 0 20px rgba(192, 192, 192, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Основной скролл отключен, он внутри экранов */
+            background-color: #08111F; /* Резервный цвет для защиты от белого экрана */
+            background: linear-gradient(135deg, #08111F 0%, #101B2D 100%);
+            color: #e2e8f0;
+            user-select: none;
+        }
+
+        /* Particles */
+        #bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glass-panel {
+            background: rgba(16, 27, 45, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        /* Screen Transitions & Layout */
+        .screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            overflow-y: auto; /* Включаем скролл внутри конкретного экрана */
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 1s cubic-bezier(0.645, 0.045, 0.355, 1);
+            transform-origin: center right;
+            transform: rotateY(-20deg) scale(0.95);
+            z-index: 5;
+        }
+
+        .screen-inner {
+            flex: 1 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6rem 1.5rem 3rem 1.5rem; /* Отступ сверху для печатей */
+            width: 100%;
+            max-width: 64rem;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: rotateY(0deg) scale(1);
+            z-index: 10;
+        }
+
+        .screen.prev {
+            transform-origin: center left;
+            transform: rotateY(20deg) scale(0.95);
+            opacity: 0;
+            z-index: 5;
+        }
+
+        /* Animations */
+        .float-anim { animation: float 6s ease-in-out infinite; }
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        .pulse-gold { animation: pulseGold 2s infinite; }
+        @keyframes pulseGold {
+            0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(212, 175, 55, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, 0.8); }
+
+        /* Seal Tracker */
+        .seal-slot {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.5s;
+        }
+        .seal-slot.filled {
+            background: radial-gradient(circle, rgba(212,175,55,1) 0%, rgba(184,134,11,1) 100%);
+            border-color: #D4AF37; box-shadow: 0 0 10px #D4AF37;
+            transform: scale(1.1);
+        }
+
+        /* Buttons */
+        .btn-magic {
+            background: linear-gradient(45deg, rgba(212,175,55,0.1), rgba(212,175,55,0.3));
+            border: 1px solid #D4AF37;
+            color: #D4AF37;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .btn-magic::before {
+            content: '';
+            position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s ease;
+        }
+        .btn-magic:hover {
+            box-shadow: 0 0 15px rgba(212,175,55,0.5);
+            background: rgba(212,175,55,0.2);
+            transform: translateY(-2px);
+        }
+        .btn-magic:hover::before { left: 100%; }
+
+        /* SVG Map Elements */
+        .map-node { fill: #101B2D; stroke: #D4AF37; stroke-width: 4; transition: all 0.3s ease; cursor: pointer; }
+        .map-node:hover { fill: rgba(212, 175, 55, 0.5); filter: drop-shadow(0 0 8px #D4AF37); }
+        .map-node.active { fill: #D4AF37; filter: drop-shadow(0 0 10px #D4AF37); }
+        .node-label { fill: #e2e8f0; font-family: 'Cormorant Garamond', serif; font-size: 22px; pointer-events: none; transition: all 0.3s; }
+        .map-node.active + .node-label { fill: #D4AF37; font-weight: bold; text-shadow: 0 0 8px rgba(212,175,55,0.5); }
+        
+        .map-line-anim {
+            stroke-dasharray: 3000;
+            stroke-dashoffset: 3000;
+            transition: stroke-dashoffset 2.5s ease-in-out;
+        }
+        .map-line-anim.drawn {
+            stroke-dashoffset: 0;
+        }
+
+        .hidden-element { display: none !important; }
+        .fade-in { animation: fadeIn 1s forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body class="antialiased bg-archive-dark text-white">
+
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- UI Overlay: Seals -->
+    <div class="fixed top-6 left-6 z-50 flex gap-2 pointer-events-none" id="seals-container">
+        <!-- Generated by JS -->
+    </div>
+    
+    <div id="main-container" class="relative w-full h-full perspective-1000">
+
+        <!-- Screen 1: Letter -->
+        <div id="screen-1" class="screen active">
+            <div class="screen-inner">
+                <div class="glass-panel p-8 md:p-12 rounded-2xl max-w-2xl w-full text-center relative float-anim transition-transform hover:scale-105 cursor-pointer" id="letter-envelope" onclick="openLetter()">
+                    <div class="absolute inset-0 bg-archive-gold/5 rounded-2xl pointer-events-none"></div>
+                    <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-archive-dark border-2 border-archive-gold flex items-center justify-center pulse-gold">
+                        <svg class="w-12 h-12 text-archive-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <h1 class="font-serif text-3xl md:text-5xl text-archive-gold mb-2">Архив Потерянных Историй</h1>
+                    <p class="font-sans text-sm tracking-widest text-archive-silver uppercase opacity-80">Строго конфиденциально</p>
+                    <div class="mt-8 text-sm text-archive-gold animate-pulse">Нажмите, чтобы распечатать</div>
+                </div>
+
+                <div id="letter-content" class="hidden-element glass-panel p-8 md:p-12 rounded-2xl max-w-2xl w-full text-left relative mt-4">
+                    <h2 class="font-serif text-3xl text-archive-gold mb-6 border-b border-archive-gold/30 pb-4">Дорогая Ангелина.</h2>
+                    <div class="font-sans text-lg leading-relaxed space-y-4 text-gray-200" id="letter-text">
+                        <!-- Typed text will go here -->
+                    </div>
+                    <div class="mt-8 text-center hidden-element" id="btn-start-container">
+                        <button class="btn-magic px-8 py-3 rounded-full font-serif text-xl" onclick="nextScreen(2, true)">Начать путешествие</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 2: Roles -->
+        <div id="screen-2" class="screen">
+            <div class="screen-inner max-w-4xl">
+                <h2 class="font-serif text-4xl text-archive-gold mb-2 text-center">Испытание Хранителя</h2>
+                <p class="font-sans text-lg text-gray-300 mb-8 text-center max-w-2xl">Выбери все направления, которыми владеет настоящий Хранитель. Только объединив их, ты получишь печать.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full" id="roles-grid">
+                    <!-- Role Cards -->
+                    <div class="role-card glass-panel p-6 rounded-xl transition-all hover:scale-105 border-transparent flex items-center gap-4 cursor-pointer" onclick="toggleRole(this, 'knowledge')">
+                        <div class="text-4xl">📚</div>
+                        <div class="font-serif text-2xl text-white">Хранитель знаний</div>
+                    </div>
+                    <div class="role-card glass-panel p-6 rounded-xl transition-all hover:scale-105 border-transparent flex items-center gap-4 cursor-pointer" onclick="toggleRole(this, 'ambassador')">
+                        <div class="text-4xl">🎓</div>
+                        <div class="font-serif text-2xl text-white">Посол университетов</div>
+                    </div>
+                    <div class="role-card glass-panel p-6 rounded-xl transition-all hover:scale-105 border-transparent flex items-center gap-4 cursor-pointer" onclick="toggleRole(this, 'artifacts')">
+                        <div class="text-4xl">📦</div>
+                        <div class="font-serif text-2xl text-white">Собиратель артефактов</div>
+                    </div>
+                    <div class="role-card glass-panel p-6 rounded-xl transition-all hover:scale-105 border-transparent flex items-center gap-4 cursor-pointer" onclick="toggleRole(this, 'alchemist')">
+                        <div class="text-4xl">🍳</div>
+                        <div class="font-serif text-2xl text-white">Алхимик вкусов</div>
+                    </div>
+                </div>
+                
+                <div id="roles-success" class="hidden-element mt-10 text-center fade-in">
+                    <p class="font-serif text-2xl text-archive-gold mb-4 shadow-glow inline-block px-6 py-2 rounded-full border border-archive-gold bg-archive-gold/10">Печать сформирована</p>
+                    <br>
+                    <button class="btn-magic px-8 py-3 rounded-full font-serif text-xl mt-4" onclick="nextScreen(3)">Продолжить путь</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 3: Pensieve -->
+        <div id="screen-3" class="screen">
+            <div class="screen-inner w-full">
+                <h2 class="font-serif text-4xl text-archive-gold mb-2 text-center z-10">Хранилище воспоминаний</h2>
+                <p class="font-sans text-lg text-gray-300 mb-8 text-center z-10 max-w-2xl mx-auto">В этих секретных ящиках хранятся важные осколки прошлого. Открой их все, чтобы собрать полную историю.</p>
+                
+                <!-- Secret Chests Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full mb-8 z-10 justify-items-center max-w-3xl mx-auto">
+                    <!-- Chest 1 -->
+                    <div class="glass-panel p-4 md:p-6 rounded-2xl w-full aspect-square max-w-[160px] flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 shadow-glow-silver group float-anim" style="animation-delay: 0s" onclick="openMemory('aboba', this)">
+                        <svg class="w-12 h-12 md:w-16 md:h-16 text-archive-silver transition-colors duration-300 chest-icon mb-2 group-hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"></path>
+                            <path d="M3 9c0-2.8 2.2-5 5-5h8c2.8 0 5 2.2 5 5"></path>
+                            <path d="M10 12h4v2h-4z"></path>
+                        </svg>
+                        <span class="font-serif text-sm md:text-base text-archive-silver transition-colors duration-300 chest-label group-hover:text-white">Ящик I</span>
+                    </div>
+                    
+                    <!-- Chest 2 -->
+                    <div class="glass-panel p-4 md:p-6 rounded-2xl w-full aspect-square max-w-[160px] flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 shadow-glow-silver group float-anim" style="animation-delay: 0.5s" onclick="openMemory('alcohol', this)">
+                        <svg class="w-12 h-12 md:w-16 md:h-16 text-archive-silver transition-colors duration-300 chest-icon mb-2 group-hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"></path>
+                            <path d="M3 9c0-2.8 2.2-5 5-5h8c2.8 0 5 2.2 5 5"></path>
+                            <path d="M10 12h4v2h-4z"></path>
+                        </svg>
+                        <span class="font-serif text-sm md:text-base text-archive-silver transition-colors duration-300 chest-label group-hover:text-white">Ящик II</span>
+                    </div>
+
+                    <!-- Chest 3 -->
+                    <div class="glass-panel p-4 md:p-6 rounded-2xl w-full aspect-square max-w-[160px] flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 shadow-glow-silver group float-anim" style="animation-delay: 1s" onclick="openMemory('pervo', this)">
+                        <svg class="w-12 h-12 md:w-16 md:h-16 text-archive-silver transition-colors duration-300 chest-icon mb-2 group-hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"></path>
+                            <path d="M3 9c0-2.8 2.2-5 5-5h8c2.8 0 5 2.2 5 5"></path>
+                            <path d="M10 12h4v2h-4z"></path>
+                        </svg>
+                        <span class="font-serif text-sm md:text-base text-archive-silver transition-colors duration-300 chest-label group-hover:text-white">Ящик III</span>
+                    </div>
+
+                    <!-- Chest 4 -->
+                    <div class="glass-panel p-4 md:p-6 rounded-2xl w-full aspect-square max-w-[160px] flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 shadow-glow-silver group float-anim" style="animation-delay: 1.5s" onclick="openMemory('poltava', this)">
+                        <svg class="w-12 h-12 md:w-16 md:h-16 text-archive-silver transition-colors duration-300 chest-icon mb-2 group-hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"></path>
+                            <path d="M3 9c0-2.8 2.2-5 5-5h8c2.8 0 5 2.2 5 5"></path>
+                            <path d="M10 12h4v2h-4z"></path>
+                        </svg>
+                        <span class="font-serif text-sm md:text-base text-archive-silver transition-colors duration-300 chest-label group-hover:text-white">Ящик IV</span>
+                    </div>
+                </div>
+
+                <!-- Memory Modal -->
+                <div id="memory-modal" class="hidden-element fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md px-4">
+                    <div class="glass-panel p-8 rounded-2xl max-w-md w-full text-center relative max-h-[80vh] overflow-y-auto">
+                        <button class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors cursor-pointer" onclick="closeMemory()">✕</button>
+                        <div id="memory-content" class="min-h-[200px] flex flex-col justify-center items-center mt-4">
+                            <!-- Dynamic Content -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="memories-success" class="hidden-element mt-4 text-center z-10 w-full fade-in">
+                    <p class="font-serif text-2xl text-archive-silver mb-4">Все воспоминания восстановлены</p>
+                    <button class="btn-magic px-8 py-3 rounded-full font-serif text-xl border-archive-silver text-archive-silver shadow-glow-silver" onclick="nextScreen(4)">Заглянуть глубже</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 4: Parcel -->
+        <div id="screen-4" class="screen">
+            <div class="screen-inner max-w-3xl w-full">
+                <h2 class="font-serif text-4xl text-archive-gold mb-2 text-center">Потерянная посылка</h2>
+                <p class="font-sans text-lg text-gray-300 mb-8 text-center">Магический склад огромен. Найди именно ту коробку, которая предназначалась тебе.</p>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-6 w-full" id="parcel-grid">
+                    <!-- Generates via JS -->
+                </div>
+
+                <div id="parcel-success" class="hidden-element mt-10 text-center glass-panel p-6 rounded-xl w-full max-w-xl fade-in mx-auto">
+                    <p class="font-serif text-2xl text-archive-gold mb-2">Сувенирка NIX найдена!</p>
+                    <p class="font-sans text-gray-300 italic mb-6">"Конечно, именно эту коробку пришлось искать тебе."</p>
+                    <button class="btn-magic px-8 py-3 rounded-full font-serif text-xl" onclick="nextScreen(5)">Открыть следующую дверь</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 5: Errors -->
+        <div id="screen-5" class="screen">
+            <div class="screen-inner max-w-3xl w-full">
+                <h2 class="font-serif text-4xl text-archive-gold mb-2 text-center">Архив ошибок</h2>
+                <p class="font-sans text-lg text-gray-300 mb-8 text-center max-w-2xl mx-auto">Слова разлетелись. Восстанови легендарную историческую надпись, кликая по словам в правильном порядке.</p>
+
+                <div class="glass-panel p-8 rounded-xl w-full relative overflow-hidden">
+                    <div id="confetti-container" class="absolute inset-0 pointer-events-none z-0"></div>
+                    
+                    <!-- Target Area -->
+                    <div class="min-h-[5rem] h-auto p-4 border-2 border-dashed border-archive-gold/50 rounded-lg mb-8 flex items-center justify-center gap-4 bg-black/20 z-10 relative transition-colors duration-300" id="typo-target">
+                        <span class="text-gray-500 font-serif italic opacity-50 text-xl md:text-2xl text-center">Соберите надпись здесь...</span>
+                    </div>
+
+                    <!-- Scattered Words -->
+                    <div class="flex flex-wrap justify-center gap-4 z-10 relative" id="typo-words">
+                        <button class="glass-panel px-6 py-3 rounded-lg font-serif text-xl md:text-2xl hover:scale-110 transition-transform text-white border border-white/10 cursor-pointer" onclick="selectWord('Агреколь', this)">Агреколь</button>
+                        <button class="glass-panel px-6 py-3 rounded-lg font-serif text-xl md:text-2xl hover:scale-110 transition-transform text-white border border-white/10 cursor-pointer" onclick="selectWord('Банк', this)">Банк</button>
+                        <button class="glass-panel px-6 py-3 rounded-lg font-serif text-xl md:text-2xl hover:scale-110 transition-transform text-white border border-white/10 cursor-pointer" onclick="selectWord('Кредит', this)">Кредит</button>
+                        <button class="glass-panel px-6 py-3 rounded-lg font-serif text-xl md:text-2xl hover:scale-110 transition-transform text-white border border-white/10 cursor-pointer" onclick="selectWord('Алкоголь', this)">Алкоголь</button>
+                    </div>
+                </div>
+
+                <div id="typo-success" class="hidden-element mt-8 text-center fade-in">
+                    <p class="font-sans text-xl text-archive-gold italic mb-6">"Иногда неправильная версия оказывается самой легендарной."</p>
+                    <button class="btn-magic px-8 py-3 rounded-full font-serif text-xl" onclick="nextScreen(6)">Далее</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 6: Library -->
+        <div id="screen-6" class="screen">
+            <div class="screen-inner w-full max-w-6xl">
+                <h2 class="font-serif text-4xl text-archive-gold mb-2 text-center">Магическая библиотека</h2>
+                <p class="font-sans text-lg text-gray-300 mb-8 text-center max-w-2xl mx-auto">Верни заблудившиеся книги на их законные полки. Кликни книгу, затем кликни подходящую полку.</p>
+
+                <div class="flex flex-col md:flex-row gap-8 w-full justify-center items-start">
+                    <!-- Books to place -->
+                    <div class="glass-panel p-6 rounded-xl w-full md:w-1/3 flex flex-col gap-4" id="library-books">
+                        <h3 class="font-serif text-2xl text-archive-gold border-b border-white/10 pb-2 mb-2 text-center">Книги</h3>
+                        <!-- Generated JS -->
+                    </div>
+
+                    <!-- Shelves -->
+                    <div class="w-full md:w-2/3 flex flex-col gap-6" id="library-shelves">
+                        <!-- Generated JS -->
+                    </div>
+                </div>
+
+                <div id="library-success" class="hidden-element mt-10 text-center fade-in w-full">
+                    <p class="font-serif text-2xl text-archive-emerald mb-6 shadow-glow-emerald inline-block px-6 py-2 border border-archive-emerald rounded-full bg-archive-emerald/10">Порядок восстановлен</p>
+                    <br>
+                    <button class="btn-magic px-8 py-3 rounded-full font-serif text-xl" onclick="nextScreen(7)">Изучить карту</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 7: Map -->
+        <div id="screen-7" class="screen">
+            <div class="screen-inner w-full max-w-4xl">
+                <h2 class="font-serif text-4xl text-archive-gold mb-2 text-center">Карта экспедиций</h2>
+                <p class="font-sans text-lg text-gray-300 mb-6 text-center max-w-2xl mx-auto">Активируй все ключевые точки в любом порядке. Когда все они зажгутся, истинный путь проявит свою форму.</p>
+
+                <div class="relative w-full aspect-[4/3] glass-panel rounded-2xl overflow-hidden shadow-glow">
+                    <!-- SVG Map -->
+                    <svg viewBox="0 0 800 600" class="w-full h-full absolute inset-0">
+                        <!-- Lines (hidden initially) -->
+                        <g id="constellation-lines" class="opacity-0 transition-opacity duration-700">
+                            <!-- Звезда, соединяющая все 5 точек -->
+                            <path class="map-line-anim" d="M400,100 L550,450 L150,250 L650,250 L250,450 Z" fill="none" stroke="#D4AF37" stroke-width="3" filter="drop-shadow(0 0 5px #D4AF37)"/>
+                        </g>
+
+                        <!-- Nodes -->
+                        <g transform="translate(400,100)" class="group" onclick="mapClick(0)">
+                            <circle r="18" class="map-node" id="node-0" />
+                            <text x="-20" y="-30" class="node-label">NIX</text>
+                        </g>
+                        <g transform="translate(150,250)" class="group" onclick="mapClick(1)">
+                            <circle r="18" class="map-node" id="node-1" />
+                            <text x="-40" y="-30" class="node-label">Университет</text>
+                        </g>
+                        <g transform="translate(650,250)" class="group" onclick="mapClick(2)">
+                            <circle r="18" class="map-node" id="node-2" />
+                            <text x="-25" y="-30" class="node-label">Студенты</text>
+                        </g>
+                        <g transform="translate(250,450)" class="group" onclick="mapClick(3)">
+                            <circle r="18" class="map-node" id="node-3" />
+                            <text x="-35" y="45" class="node-label">Практика</text>
+                        </g>
+                        <g transform="translate(550,450)" class="group" onclick="mapClick(4)">
+                            <circle r="18" class="map-node" id="node-4" />
+                            <text x="-60" y="45" class="node-label">Будущие коллеги</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <div id="map-success" class="hidden-element mt-8 text-center fade-in">
+                    <p class="font-sans text-xl text-archive-gold italic mb-4">"Звезда Хранителя. Все связи имеют значение, независимо от того, с чего начать."</p>
+                    <button class="btn-magic px-8 py-3 rounded-full font-serif text-xl" onclick="nextScreen(8)">Призвать Патронус</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 8: Patronus -->
+        <div id="screen-8" class="screen">
+            <div class="screen-inner w-full max-w-5xl relative">
+                <h2 class="font-serif text-4xl text-archive-silver mb-2 text-center z-10 shadow-glow-silver rounded px-4 py-2 bg-black/30 inline-block mx-auto">Патронус воспоминаний</h2>
+                <p class="font-sans text-lg text-gray-300 mb-8 text-center max-w-2xl mx-auto z-10">Собери все созданные истории, чтобы призвать свет.</p>
+
+                <div class="relative w-full h-[60vh] min-h-[400px] z-10" id="patronus-area">
+                    <!-- Sparks generated by JS -->
+                </div>
+
+                <!-- The Book (Hidden initially) -->
+                <div id="final-book-trigger" class="hidden-element absolute inset-0 z-20 flex flex-col items-center justify-center bg-archive-dark/90 backdrop-blur-md fade-in rounded-2xl">
+                    <div class="w-48 h-64 md:w-64 md:h-80 bg-[#2C1810] rounded-r-2xl rounded-l-md border-l-8 border-[#1A0F0A] shadow-[20px_20px_50px_rgba(0,0,0,0.8)] relative flex items-center justify-center transition-transform hover:scale-105 float-anim group cursor-pointer" onclick="nextScreen(9)">
+                        <div class="absolute inset-2 border-2 border-archive-gold/30 rounded-r-xl pointer-events-none"></div>
+                        <div class="absolute inset-4 border border-archive-gold/10 rounded-r-lg flex items-center justify-center pointer-events-none">
+                            <svg class="w-20 h-20 md:w-24 md:h-24 text-archive-gold group-hover:scale-110 transition-transform pulse-gold rounded-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        </div>
+                    </div>
+                    <p class="mt-8 font-serif text-xl md:text-2xl text-archive-gold animate-pulse text-center bg-black/50 px-6 py-2 rounded-full">Коснитесь книги</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 9: Finale -->
+        <div id="screen-9" class="screen bg-black/90">
+            <div class="screen-inner max-w-4xl w-full text-center relative" id="finale-sequence">
+                
+                <div id="fin-text-1" class="font-serif text-3xl md:text-5xl text-archive-silver mb-8 leading-relaxed opacity-0 transition-opacity duration-1000">
+                    Некоторые истории заканчиваются.
+                </div>
+                
+                <div id="fin-text-2" class="hidden-element font-serif text-3xl md:text-5xl text-archive-gold mb-12 leading-relaxed opacity-0 transition-opacity duration-1000">
+                    Но лучшие — только начинаются.
+                </div>
+
+                <div id="fin-text-3" class="hidden-element flex-col items-center mt-4 fade-in w-full pb-10">
+                    <p class="font-serif text-xl md:text-2xl text-gray-300 italic mb-8 max-w-2xl mx-auto">
+                        Надеемся, следующая книга, которую ты выберешь, станет одной из самых любимых.
+                    </p>
+
+                    <!-- Certificate -->
+                    <div class="relative w-full max-w-lg mx-auto bg-gradient-to-br from-white to-gray-200 text-archive-dark p-6 md:p-8 rounded-sm shadow-[0_0_40px_rgba(212,175,55,0.4)] mb-10 border-8 border-double border-archive-gold/40 transform -rotate-1 hover:rotate-0 transition-transform duration-500">
+                        <div class="text-center">
+                            <h3 class="font-serif text-2xl md:text-4xl text-[#2C1810] mb-2 uppercase tracking-widest border-b border-archive-dark/20 pb-2">Подарочный Сертификат</h3>
+                            <div class="text-5xl md:text-6xl font-sans font-bold text-archive-emerald my-6">500 грн</div>
+                            <p class="font-sans text-xs md:text-sm uppercase tracking-widest text-gray-600">На новые книжные истории</p>
+                            <div class="absolute bottom-4 right-4 w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-archive-gold/50 flex items-center justify-center opacity-50">
+                                <span class="font-serif text-archive-gold text-sm md:text-base">NIX</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-xl w-full text-left border-l-4 border-archive-gold mb-12">
+                        <h4 class="font-serif text-2xl md:text-3xl text-archive-gold mb-3">С днем рождения, Ангелина!</h4>
+                        <p class="font-sans text-sm md:text-base leading-relaxed text-gray-200">
+                            Спасибо за твою энергию, заботу, чувство юмора и за то, что превращаешь обычные рабочие дни в истории, которые потом вспоминают с улыбкой. Пусть впереди будет еще больше интересных книг, вдохновляющих путешествий, классных проектов, веселых моментов и поводов смеяться так же искренне, как над "Кредитом Алкоголь" и легендарной "Абобой". ❤️
+                        </p>
+                    </div>
+
+                    <a href="Сертифікат.pdf" download>
+  <button class="btn-magic px-10 py-4 rounded-full font-serif text-2xl shadow-glow">
+    Получить подарок
+  </button>
+</a>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // State
+        const state = {
+            screen: 1,
+            seals: 0,
+            maxSeals: 8,
+            s2_roles: new Set(),
+            s3_mems: new Set(),
+            s4_found: false,
+            s5_words: [],
+            s6_selectedBook: null,
+            s6_matches: 0,
+            s7_step: 0,
+            s8_sparks: 0
+        };
+
+        // Initialize UI
+        function init() {
+            createSealTracker();
+            initParticles();
+            setupScreen4();
+            setupScreen6();
+            setupScreen8();
+            
+            // Initial hide of all screens except 1
+            document.querySelectorAll('.screen').forEach((el, index) => {
+                if(index !== 0) el.classList.remove('active');
+            });
+        }
+
+        // Seal Tracker
+        function createSealTracker() {
+            const container = document.getElementById('seals-container');
+            container.innerHTML = '';
+            for(let i=0; i<state.maxSeals; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'seal-slot';
+                slot.id = `seal-${i+1}`;
+                slot.innerHTML = `<svg class="w-4 h-4 opacity-30 text-archive-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`;
+                container.appendChild(slot);
+            }
+        }
+
+        function grantSeal() {
+            if(state.seals < state.maxSeals) {
+                state.seals++;
+                const slot = document.getElementById(`seal-${state.seals}`);
+                slot.classList.add('filled');
+                slot.innerHTML = ''; 
+                createBurstEffect(slot.getBoundingClientRect());
+            }
+        }
+
+        // Navigation
+        function nextScreen(num, skipSeal = false) {
+            if(!skipSeal && num > 2) grantSeal();
+            
+            const current = document.getElementById(`screen-${state.screen}`);
+            const next = document.getElementById(`screen-${num}`);
+            
+            current.classList.remove('active');
+            current.classList.add('prev');
+            
+            setTimeout(() => {
+                current.classList.add('hidden-element');
+                current.classList.remove('prev');
+                
+                next.classList.remove('hidden-element');
+                void next.offsetWidth;
+                next.classList.add('active');
+                
+                state.screen = num;
+                
+                if(num === 9) runFinale();
+            }, 800);
+        }
+
+        // Screen 1 Logic
+        function openLetter() {
+            const env = document.getElementById('letter-envelope');
+            const content = document.getElementById('letter-content');
+            env.style.display = 'none';
+            content.classList.remove('hidden-element');
+            content.classList.add('fade-in');
+            
+            grantSeal();
+
+            const textContainer = document.getElementById('letter-text');
+            const text = "Мы знаем, что ты умеешь находить нужные книги, объединять людей, собирать редкие артефакты и создавать истории, которые хочется вспоминать.<br><br>Но сегодня тебе предстоит особая миссия.<br>Где-то в Архиве был спрятан подарок. Чтобы его получить, необходимо пройти семь испытаний.";
+            
+            textContainer.innerHTML = '';
+            let i = 0;
+            
+            function typeWriter() {
+                if (i < text.length) {
+                    if(text.charAt(i) === '<') {
+                        let tag = '';
+                        while(text.charAt(i) !== '>') {
+                            tag += text.charAt(i);
+                            i++;
+                        }
+                        tag += '>';
+                        textContainer.innerHTML += tag;
+                        i++;
+                    } else {
+                        textContainer.innerHTML += text.charAt(i);
+                        i++;
+                    }
+                    setTimeout(typeWriter, 20);
+                } else {
+                    document.getElementById('btn-start-container').classList.remove('hidden-element');
+                    document.getElementById('btn-start-container').classList.add('fade-in');
+                }
+            }
+            typeWriter();
+        }
+
+        // Screen 2 Logic
+        function toggleRole(el, role) {
+            if(state.s2_roles.has(role)) {
+                state.s2_roles.delete(role);
+                el.classList.remove('border-archive-gold', 'bg-archive-gold/20', 'scale-105');
+                el.classList.add('border-transparent');
+            } else {
+                state.s2_roles.add(role);
+                el.classList.remove('border-transparent');
+                el.classList.add('border-archive-gold', 'bg-archive-gold/20', 'scale-105', 'shadow-glow');
+            }
+
+            if(state.s2_roles.size === 4) {
+                document.getElementById('roles-success').classList.remove('hidden-element');
+                document.getElementById('roles-grid').style.pointerEvents = 'none';
+            }
+        }
+
+        // Screen 3 Logic
+        const memoryData = {
+            aboba: {
+                content: "<div class='text-5xl mb-4 float-anim'>🃏</div><p class='font-sans text-lg mb-4'>Иногда одна тестовая карточка может стать легендой.</p><p class='font-serif text-archive-emerald text-xl bg-black/30 p-2 rounded'>Абоба обнаружена. История сохранена.</p>"
+            },
+            alcohol: {
+                content: `<div class='text-3xl font-bold bg-green-800 p-4 rounded mb-4 text-white uppercase' id='bank-sign'>Агреколь</div>
+                          <p class='font-sans text-gray-300 italic mb-4' id='bank-text'>Восстановление...</p>`
+            },
+            pervo: {
+                content: `<div class='bg-[#e8dcb8] text-[#2c1810] p-6 rounded shadow-inner font-serif text-2xl mb-4 font-bold' id='scroll-text'>Первопроходимец</div>
+                          <p class='font-sans text-archive-gold' id='scroll-status'></p>`
+            },
+            poltava: {
+    content: `
+        <div class="w-full h-40 rounded mb-4 overflow-hidden border-4 border-white shadow-lg rotate-2">
+            <img
+                src="images/poltava.jpg"
+                alt="Poltava"
+                class="w-full h-full object-cover"
+            >
+        </div>
+        <p class="font-serif text-xl text-archive-silver">
+            Некоторые командировки становятся хорошими историями.
+        </p>
+    `
+}
+        }
+
+        function openMemory(id, chestEl) {
+            if (state.s3_mems.has(id)) {
+                // Если ящик уже открыт, просто показываем модалку
+                const modal = document.getElementById('memory-modal');
+                const content = document.getElementById('memory-content');
+                modal.classList.remove('hidden-element');
+                content.innerHTML = memoryData[id].content;
+                return;
+            }
+
+            // Обновляем визуал ящика на "открытый"
+            chestEl.classList.remove('shadow-glow-silver');
+            chestEl.classList.add('shadow-glow', 'border-archive-gold', 'bg-archive-gold/10');
+            
+            const icon = chestEl.querySelector('.chest-icon');
+            if(icon) {
+                icon.classList.remove('text-archive-silver', 'group-hover:text-white');
+                icon.classList.add('text-archive-gold');
+            }
+            
+            const label = chestEl.querySelector('.chest-label');
+            if(label) {
+                label.classList.remove('text-archive-silver', 'group-hover:text-white');
+                label.classList.add('text-archive-gold');
+                label.innerText = "Открыт";
+            }
+            
+            const modal = document.getElementById('memory-modal');
+            const content = document.getElementById('memory-content');
+            modal.classList.remove('hidden-element');
+            
+            content.innerHTML = memoryData[id].content;
+
+            if(id === 'alcohol') {
+                setTimeout(() => { document.getElementById('bank-sign').innerText = 'Алкоголь'; document.getElementById('bank-text').innerHTML = '<span class="text-archive-gold">Некоторые воспоминания невозможно исправить.</span>'; }, 1500);
+            } else if (id === 'pervo') {
+                setTimeout(() => { document.getElementById('scroll-text').innerText = 'Первопроходец'; }, 1000);
+                setTimeout(() => { document.getElementById('scroll-text').innerText = 'Нет...'; }, 2000);
+                setTimeout(() => { document.getElementById('scroll-text').innerText = 'Первопроходимец'; document.getElementById('scroll-status').innerText = 'Оставим как есть ❤️'; }, 3000);
+            }
+
+            state.s3_mems.add(id);
+        }
+
+        function closeMemory() {
+            document.getElementById('memory-modal').classList.add('hidden-element');
+            if(state.s3_mems.size === 4) {
+                document.getElementById('memories-success').classList.remove('hidden-element');
+            }
+        }
+
+        // Screen 4 Logic
+        function setupScreen4() {
+            const boxes = ['Волшебная палочка', 'Мантия', 'Книга зелий', 'Сувенирка NIX', 'Метла', 'Носки Добби'];
+            const grid = document.getElementById('parcel-grid');
+            
+            boxes.sort(() => Math.random() - 0.5).forEach(box => {
+                const el = document.createElement('div');
+                el.className = 'glass-panel p-4 md:p-6 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-transform relative group min-h-[120px]';
+                el.innerHTML = `
+                    <div class="text-4xl mb-2 group-hover:scale-110 transition-transform">📦</div>
+                    <div class="font-sans text-xs md:text-sm text-center font-medium">${box === 'Сувенирка NIX' ? '???' : box}</div>
+                `;
+                
+                el.onclick = () => {
+                    if(state.s4_found) return;
+                    if(box === 'Сувенирка NIX') {
+                        el.classList.add('bg-archive-emerald/20', 'border-archive-emerald', 'shadow-glow-emerald');
+                        el.innerHTML = `<div class="text-4xl mb-2">🎁</div><div class="font-sans text-xs md:text-sm text-center font-bold text-archive-gold">Сувенирка NIX</div>`;
+                        state.s4_found = true;
+                        document.getElementById('parcel-success').classList.remove('hidden-element');
+                    } else {
+                        el.style.transform = 'translateX(-5px)';
+                        setTimeout(() => el.style.transform = 'translateX(5px)', 50);
+                        setTimeout(() => el.style.transform = 'translateX(-5px)', 100);
+                        setTimeout(() => el.style.transform = 'translateX(0)', 150);
+                    }
+                };
+                grid.appendChild(el);
+            });
+        }
+
+        // Screen 5 Logic
+        function selectWord(word, btnEl) {
+            if(state.s5_words.length >= 2) return;
+            
+            btnEl.classList.add('hidden-element');
+            state.s5_words.push(word);
+            
+            const target = document.getElementById('typo-target');
+            if(state.s5_words.length === 1) {
+                target.innerHTML = `<span class="font-serif text-2xl md:text-3xl text-white">${word}</span>`;
+            } else {
+                target.innerHTML = `<span class="font-serif text-2xl md:text-3xl text-white">${state.s5_words[0]} ${word}</span>`;
+                
+                if(state.s5_words[0] === 'Кредит' && word === 'Алкоголь') {
+                    target.classList.add('border-archive-emerald', 'bg-archive-emerald/20', 'shadow-glow-emerald');
+                    fireConfetti();
+                    document.getElementById('typo-success').classList.remove('hidden-element');
+                    document.getElementById('typo-words').style.display = 'none';
+                } else {
+                    target.classList.add('border-red-500', 'bg-red-500/20');
+                    setTimeout(() => {
+                        state.s5_words = [];
+                        target.innerHTML = `<span class="text-gray-500 font-serif italic opacity-50 text-xl md:text-2xl">Соберите надпись здесь...</span>`;
+                        target.classList.remove('border-red-500', 'bg-red-500/20');
+                        document.querySelectorAll('#typo-words button').forEach(b => b.classList.remove('hidden-element'));
+                    }, 1200);
+                }
+            }
+        }
+
+        function fireConfetti() {
+            const container = document.getElementById('confetti-container');
+            for(let i=0; i<50; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'absolute w-2 h-2 rounded-sm';
+                conf.style.backgroundColor = ['#D4AF37', '#047857', '#C0C0C0', '#ffffff'][Math.floor(Math.random()*4)];
+                conf.style.left = '50%'; conf.style.top = '50%';
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 50 + Math.random() * 100;
+                const tx = Math.cos(angle) * velocity; const ty = Math.sin(angle) * velocity;
+                
+                conf.animate([
+                    { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+                    { transform: `translate(${tx}px, ${ty}px) rotate(${Math.random()*360}deg)`, opacity: 0 }
+                ], { duration: 1000 + Math.random()*1000, easing: 'cubic-bezier(.25,.8,.25,1)', fill: 'forwards' });
+                container.appendChild(conf);
+            }
+        }
+
+        // Screen 6 Logic
+        const libraryData = [
+            { id: 'mag', shelf: 'Магия', book: 'Зелья' },
+            { id: 'cook', shelf: 'Кулинария', book: '100 рецептов' },
+            { id: 'edu', shelf: 'Обучение', book: 'Практика в NIX' },
+            { id: 'hist', shelf: 'Истории', book: 'История магических существ' },
+            { id: 'adv', shelf: 'Приключения', book: 'Путешествие героя' }
+        ];
+
+        function setupScreen6() {
+            const booksContainer = document.getElementById('library-books');
+            const shelvesContainer = document.getElementById('library-shelves');
+            
+            // Очищаем перед генерацией (на случай рестарта)
+            shelvesContainer.innerHTML = '';
+            booksContainer.innerHTML = '<h3 class="font-serif text-2xl md:text-3xl text-archive-gold border-b border-white/10 pb-2 mb-4 text-center">Книги</h3>';
+            
+            libraryData.forEach(item => {
+                // Создаем обертку для полки и названия
+                const shelfWrapper = document.createElement('div');
+                shelfWrapper.className = 'w-full flex flex-col mb-2';
+
+                // Выносим название полки над ней (крупный и читаемый текст)
+                const label = document.createElement('div');
+                label.className = 'font-serif text-archive-gold text-lg md:text-xl mb-1 ml-2 opacity-90 tracking-wide';
+                label.innerText = item.shelf;
+
+                // Сама полка - теперь делаем ее центрированной для горизонтальных книг
+                const shelf = document.createElement('div');
+                shelf.className = 'w-full h-20 md:h-24 border-b-8 border-[#3e2723] bg-[#2a1b12]/60 rounded-t flex items-end justify-center px-4 pb-0 gap-4 cursor-pointer transition-all hover:bg-[#2a1b12]/90 shadow-inner relative';
+                shelf.onclick = () => placeBookOnShelf(shelf, item.id);
+
+                shelfWrapper.appendChild(label);
+                shelfWrapper.appendChild(shelf);
+                shelvesContainer.appendChild(shelfWrapper);
+            });
+
+            const shuffledBooks = [...libraryData].sort(() => Math.random() - 0.5);
+            shuffledBooks.forEach(item => {
+                const book = document.createElement('div');
+                // Увеличиваем размер текста и паддинги для удобства чтения
+                book.className = 'bg-gradient-to-r from-[#2c1810] to-[#4e342e] border border-archive-gold/40 p-3 md:p-4 rounded cursor-pointer text-base md:text-lg font-serif text-center hover:scale-105 transition-all shadow-md book-item';
+                book.innerText = item.book;
+                book.dataset.id = item.id;
+                book.onclick = (e) => selectBook(book, e);
+                booksContainer.appendChild(book);
+            });
+        }
+
+        function selectBook(bookEl, e) {
+            e.stopPropagation();
+            if(state.s6_selectedBook) {
+                state.s6_selectedBook.classList.remove('shadow-glow', 'border-archive-gold', 'scale-105');
+            }
+            if(state.s6_selectedBook === bookEl) {
+                state.s6_selectedBook = null;
+                return;
+            }
+            state.s6_selectedBook = bookEl;
+            bookEl.classList.add('shadow-glow', 'border-archive-gold', 'scale-105');
+        }
+
+        function placeBookOnShelf(shelfEl, shelfId) {
+            if(!state.s6_selectedBook) return;
+            const bookId = state.s6_selectedBook.dataset.id;
+            
+            if(bookId === shelfId) {
+                const b = state.s6_selectedBook;
+                // Стилизируем книгу так, чтобы она лежала горизонтально и текст легко читался
+                b.className = 'bg-gradient-to-b from-[#4e342e] to-[#2c1810] border border-archive-gold/40 px-6 py-2 md:py-3 w-11/12 md:w-3/4 max-w-[250px] rounded-sm flex items-center justify-center font-serif text-white cursor-default shadow-[0_-2px_10px_rgba(0,0,0,0.5)] text-sm md:text-base text-center tracking-wider transition-all duration-500 mb-[2px]';
+                b.style.writingMode = 'horizontal-tb';
+                b.onclick = null; // Отключаем клик
+                
+                shelfEl.appendChild(b);
+                state.s6_selectedBook = null;
+                state.s6_matches++;
+                
+                // Магическая вспышка на полке
+                shelfEl.style.boxShadow = 'inset 0 -15px 30px rgba(212,175,55,0.3)';
+                setTimeout(() => shelfEl.style.boxShadow = '', 500);
+
+                if(state.s6_matches === libraryData.length) {
+                    document.getElementById('library-success').classList.remove('hidden-element');
+                    document.getElementById('library-books').style.display = 'none';
+                }
+            } else {
+                const b = state.s6_selectedBook;
+                b.style.transform = 'translateX(-5px)';
+                setTimeout(() => b.style.transform = 'translateX(5px)', 50);
+                setTimeout(() => b.style.transform = 'translateX(-5px)', 100);
+                setTimeout(() => b.style.transform = 'translateX(0)', 150);
+            }
+        }
+
+        // Screen 7 Logic
+        function mapClick(nodeIndex) {
+            if (!state.s7_activeNodes) state.s7_activeNodes = new Set();
+            
+            if (!state.s7_activeNodes.has(nodeIndex)) {
+                const activeNode = document.getElementById(`node-${nodeIndex}`);
+                activeNode.classList.add('active');
+                
+                state.s7_activeNodes.add(nodeIndex);
+                
+                if (state.s7_activeNodes.size === 5) {
+                    // Показываем созвездие
+                    const linesGroup = document.getElementById('constellation-lines');
+                    linesGroup.classList.remove('opacity-0');
+                    
+                    const path = linesGroup.querySelector('.map-line-anim');
+                    setTimeout(() => {
+                        path.classList.add('drawn');
+                    }, 50);
+                    
+                    setTimeout(() => {
+                        document.getElementById('map-success').classList.remove('hidden-element');
+                    }, 2500); // Ждем пока путь полностью нарисуется
+                }
+            }
+        }
+
+        // Screen 8 Logic
+        function setupScreen8() {
+            const area = document.getElementById('patronus-area');
+            const labels = ["Абоба", "Кредит Алкоголь", "Первопроходимец", "Книги", "Университеты", "Сувенирка", "Полтава"];
+            
+            const positions = [
+                { top: '15%', left: '20%' }, { top: '25%', left: '70%' },
+                { top: '45%', left: '10%' }, { top: '55%', left: '75%' },
+                { top: '75%', left: '30%' }, { top: '80%', left: '70%' },
+                { top: '10%', left: '50%' }
+            ];
+
+            labels.forEach((label, i) => {
+                const spark = document.createElement('div');
+                spark.className = 'absolute px-4 py-2 rounded-full glass-panel font-serif text-archive-silver transition-all duration-500 hover:bg-white/20 hover:text-white float-anim text-sm md:text-base whitespace-nowrap text-center cursor-pointer';
+                spark.style.left = positions[i].left;
+                spark.style.top = positions[i].top;
+                spark.style.transform = 'translate(-50%, -50%)';
+                spark.style.animationDelay = `${Math.random() * 2}s`;
+                spark.innerText = label;
+                
+                spark.onclick = () => {
+                    spark.style.transform = 'translate(-50%, -50%) scale(0)';
+                    spark.style.opacity = '0';
+                    spark.style.pointerEvents = 'none';
+                    state.s8_sparks++;
+                    
+                    spark.style.left = '50%';
+                    spark.style.top = '50%';
+
+                    if(state.s8_sparks === labels.length) {
+                        setTimeout(summonPatronus, 800);
+                    }
+                };
+                area.appendChild(spark);
+            });
+        }
+
+        function summonPatronus() {
+            const area = document.getElementById('patronus-area');
+            area.innerHTML = '';
+            
+            const entity = document.createElement('div');
+            entity.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-archive-silver/20 shadow-[0_0_100px_rgba(192,192,192,0.8)] flex items-center justify-center fade-in';
+            entity.innerHTML = `<div class="w-16 h-16 rounded-full bg-white shadow-[0_0_50px_#fff] pulse-gold"></div>`;
+            area.appendChild(entity);
+
+            setTimeout(() => {
+                entity.classList.add('hidden-element');
+                document.getElementById('final-book-trigger').classList.remove('hidden-element');
+            }, 2000);
+        }
+
+        // Screen 9 (Finale) Logic
+        function runFinale() {
+            document.getElementById('seals-container').style.display = 'none';
+
+            const t1 = document.getElementById('fin-text-1');
+            const t2 = document.getElementById('fin-text-2');
+            const t3 = document.getElementById('fin-text-3');
+
+            setTimeout(() => { t1.style.opacity = '1'; }, 1000);
+            
+            setTimeout(() => { 
+                t1.style.opacity = '0'; 
+                setTimeout(() => { 
+                    t1.classList.add('hidden-element'); 
+                    t2.classList.remove('hidden-element'); 
+                    setTimeout(() => t2.style.opacity = '1', 50);
+                }, 1000);
+            }, 4000);
+            
+            setTimeout(() => { 
+                t2.style.opacity = '0'; 
+                setTimeout(() => { 
+                    t2.classList.add('hidden-element'); 
+                    t3.classList.remove('hidden-element'); 
+                }, 1000);
+            }, 8000);
+        }
+
+        function downloadGift() {
+            const link = document.createElement('a');
+            link.href = 'gift_for_angelina.txt'; 
+            const content = "С Днем Рождения, Ангелина!\n\nТвой подарок ждет тебя.\n(Здесь должен быть реальный файл из репозитория)";
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            link.href = url; 
+            link.download = 'Gift_Archive.txt';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            const btn = document.querySelector('#fin-text-3 button');
+            btn.innerText = 'Загрузка...';
+            btn.classList.add('opacity-50', 'cursor-default');
+            btn.onclick = null;
+        }
+
+        // --- Visual Effects (Canvas) ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+
+        function initParticles() {
+            resize();
+            for(let i=0; i<50; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2,
+                    speedY: -0.1 - Math.random() * 0.5,
+                    speedX: (Math.random() - 0.5) * 0.5,
+                    opacity: Math.random() * 0.5
+                });
+            }
+            animateBg();
+        }
+
+        function animateBg() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(212, 175, 55, 1)';
+            
+            particles.forEach(p => {
+                p.y += p.speedY; p.x += p.speedX;
+                if(p.y < 0) { p.y = canvas.height; p.x = Math.random() * canvas.width; }
+                ctx.globalAlpha = p.opacity;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            requestAnimationFrame(animateBg);
+        }
+
+        function createBurstEffect(rect) {
+            const burst = document.createElement('div');
+            burst.style.position = 'absolute';
+            burst.style.left = `${rect.left + rect.width/2}px`;
+            burst.style.top = `${rect.top + rect.height/2}px`;
+            burst.style.width = '10px'; burst.style.height = '10px';
+            burst.style.borderRadius = '50%';
+            burst.style.background = '#D4AF37';
+            burst.style.boxShadow = '0 0 20px 10px rgba(212,175,55,0.8)';
+            burst.style.transform = 'translate(-50%, -50%)';
+            burst.style.zIndex = '1000'; burst.style.pointerEvents = 'none';
+            document.body.appendChild(burst);
+
+            burst.animate([
+                { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                { transform: 'translate(-50%, -50%) scale(5)', opacity: 0 }
+            ], { duration: 600, easing: 'ease-out' }).onfinish = () => burst.remove();
+        }
+
+        window.onload = init;
+
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
 # CV-landing
 Visualization for CV via landing page
 
-https://valkirie-dev.github.io/AnhelinaBD/
+https://valkirie-dev.github.io/Birthdays/
